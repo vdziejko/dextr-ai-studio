@@ -2,7 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export default async function handler(req, res) {
   // 🚨 PASTE YOUR REAL API KEY INSIDE THE QUOTES BELOW 🚨
-  const apiKey = "AIzaSyAenK65EKqrcMd0YueDzD2ThEd2FrNRfQ0"; 
+  const apiKey = process.env.GEMINI_API_KEY;
 
   const { target, source_sample } = req.body;
 
