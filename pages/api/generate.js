@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export default async function handler(req, res) {
   // 🚨 PASTE YOUR REAL KEY INSIDE THE QUOTES BELOW 🚨
-  const apiKey = process.env.GEMINI_API_KEY_FINAL;
+  const apiKey = process.env.GEMINI_API_KEY;
 
   const { input } = req.body;
   if (!input) {
@@ -66,19 +66,25 @@ export default async function handler(req, res) {
         { "generated_code": "...the code snippet text..." }
       `;
     } else if (isMappingSuggestion) {
-      // --- PHASE 3: SEMANTIC MAPPING ---
+      // --- PHASE 3: SEMANTIC MAPPING (Surgical Fix for Rules & Confidence) ---
       prompt = `
-        Act as an ERP Data Integration Expert. 
-        Compare Source Fields and Target Schema. Suggest a mapping for every Target field.
+        Act as a Senior Data Integration Expert. 
+        Compare Source Schema and Target Schema. Suggest a mapping for every Target field.
         
-        SOURCE FIELDS: ${JSON.stringify(input.source_fields)}
-        TARGET SCHEMA: ${JSON.stringify(input.target_schema)}
-        USER INSTRUCTIONS: ${input.user_instructions || "None"}
-        
+        SOURCE SCHEMA (The Input): ${JSON.stringify(input.source_schema)}
+        TARGET SCHEMA (The Goal): ${JSON.stringify(input.target_schema)}
+        USER RULES (Obey Strictly): ${input.user_instructions || "No specific rules provided."}
+
+        MAPPING RULES:
+        1. If a source field is inside "lines", the mapping source must start with "Lines / ".
+        2. Match based on semantic meaning (e.g., "Qty" maps to "Quantity").
+        3. DYNAMIC CONFIDENCE: Calculate a unique confidence score (0.01 to 0.99). 
+           Do NOT use 1.0 or 0.88 as a default. If a rule says "leave blank", map to NULL with 0.99 confidence.
+
         OUTPUT FORMAT (Strict JSON):
         {
           "suggestions": [
-            { "source": "field_name", "target": "field_name", "rule": "logic", "confidence": 0.95 }
+            { "source": "Lines / field_name", "target": "field_name", "rule": "REASONING_OR_RULE", "confidence": <dynamic_decimal> }
           ]
         }
       `;

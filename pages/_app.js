@@ -856,14 +856,18 @@ const Phase3View = ({ activeProject, onPublish, onSaveDraft, onGoToExport, onBac
   const sourceFields = activeProject?.artifacts?.sourceFields || { header: {}, lines: [] };
   const targetSchema = activeProject?.artifacts?.schema || { header: {}, lines: {} };
 
+  // --- SURGICAL FIX: Handling Line Array vs Object ---
+  const sourceLines = Array.isArray(sourceFields.lines) ? sourceFields.lines[0] : sourceFields.lines;
+  const targetLines = Array.isArray(targetSchema.lines) ? targetSchema.lines[0] : targetSchema.lines;
+
   const availableSourceFields = [
-    ...Object.keys(sourceFields.header),
-    ...(sourceFields.lines.length > 0 ? Object.keys(sourceFields.lines[0]).map(k => `Lines / ${k}`) : [])
+    ...Object.keys(sourceFields.header || {}),
+    ...Object.keys(sourceLines || {}).map(k => `Lines / ${k}`)
   ];
 
   const availableTargetFields = [
     ...Object.keys(targetSchema.header || {}),
-    ...Object.keys(targetSchema.lines || {}).map(k => `Lines / ${k}`)
+    ...Object.keys(targetLines || {}).map(k => `Lines / ${k}`)
   ];
 
   const cleanName = (str) => str ? str.replace(/^(HEADER|LINE_ITEMS|Lines)(\.|\s\/\s|\/)/i, '').toLowerCase().trim() : "";
@@ -916,7 +920,7 @@ const Phase3View = ({ activeProject, onPublish, onSaveDraft, onGoToExport, onBac
         body: JSON.stringify({
           input: {
             state: { phase: "mapping_suggestion" },
-            source_fields: sourceFields,
+            source_schema: sourceFields,
             target_schema: targetSchema,
             user_instructions: transformationPrompt 
           }
@@ -1309,18 +1313,26 @@ const Phase4View = ({ activeProject, onBack, onPrev }) => {
   );
 };
 
-const MappingField = ({ label, type, isTarget, active, targetLabel, onEdit }) => (
+const MappingField = ({ label, type, isTarget, active, targetLabel, onEdit, confidence }) => (
   <div className={`flex flex-col gap-2 p-4 rounded-xl border transition-all ${active ? 'border-indigo-200 bg-white shadow-sm' : 'border-slate-100 bg-white/50'}`}>
     <div className={`flex items-center gap-4 ${isTarget ? 'flex-row-reverse w-full' : ''}`}>
       <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${active ? (isTarget ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white') : 'bg-slate-100 text-slate-400'}`}>
         {active ? <CheckCircle size={18} /> : <div className="w-2 h-2 rounded-full bg-current" />}
       </div>
 
-      <div className={`flex-1 min-w-0 ${isTarget ? 'text-right' : 'text-left'}`}>
+      <div className={`flex-1 min-0 ${isTarget ? 'text-right' : 'text-left'}`}>
         <p className={`text-sm font-bold truncate ${active ? 'text-slate-900' : 'text-slate-400'}`}>{label}</p>
         {targetLabel && (
-          <div className={`mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-50 text-[9px] font-black text-indigo-600 uppercase tracking-wide border border-indigo-100 max-w-full overflow-hidden`}>
-            <span className="truncate">{targetLabel}</span>
+          <div className="mt-1 flex flex-col gap-1">
+            <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-50 text-[9px] font-black text-indigo-600 uppercase border border-indigo-100 max-w-full overflow-hidden">
+              <span className="truncate">{targetLabel}</span>
+            </div>
+            {/* 🎯 AI CONFIDENCE BADGE: Shows the dynamic auditor score */}
+            {confidence > 0 && (
+              <span className="text-[8px] font-bold text-emerald-500 uppercase tracking-tighter">
+                AI Confidence: {(confidence * 100).toFixed(0)}%
+              </span>
+            )}
           </div>
         )}
       </div>
