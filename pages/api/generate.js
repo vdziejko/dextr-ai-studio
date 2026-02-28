@@ -2,7 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export default async function handler(req, res) {
   // 🚨 PASTE YOUR REAL KEY INSIDE THE QUOTES BELOW 🚨
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY_FINAL;
 
   const { input } = req.body;
   if (!input) {
