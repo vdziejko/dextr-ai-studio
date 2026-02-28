@@ -1,3 +1,4 @@
+console.log("Dextr Live Update 1.0");
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export default async function handler(req, res) {
